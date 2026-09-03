@@ -6,11 +6,9 @@ import com.example.homework.service.TaskService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -41,6 +39,30 @@ public class TaskController {
         Task task = taskService.getTaskById(id);
         log.info("getTaskById finished: {}", task);
         return ResponseEntity.ok(task);
+    }
+
+    @PostMapping
+    public ResponseEntity<Task> createTask(@RequestBody Task task) {
+        log.info("createTask called");
+        Task createdTask = taskService.createTask(task);
+        log.info("createTask finished, task = {}", createdTask);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdTask);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Task> updateTask(@PathVariable Long id, @RequestBody Task task) {
+        log.info("updateTask called, id = {}", id);
+        Task updatedTask = taskService.updateTask(id, task);
+        log.info("updateTask finished, task = {}", updatedTask);
+        return ResponseEntity.ok(updatedTask);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
+        log.info("deleteTask called, id = {}", id);
+        taskService.deleteTask(id);
+        log.info("deleteTask finished");
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 
 }
