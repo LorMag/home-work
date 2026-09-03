@@ -65,4 +65,11 @@ public class TaskController {
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 
+    @PostMapping("/{id}/start")
+    public ResponseEntity<Task> setTaskStatusInProgress(@PathVariable("id") Long id, @RequestBody Task task)  {
+        log.info("setTaskStatusInProgress called, id = {}, task = {}", id, task);
+        Task updatedTask = taskService.setTaskStatusInProgress(id, task);
+        log.info("setTaskStatusInProgress finished, response = {}", updatedTask);
+        return ResponseEntity.ok(updatedTask);
+    }
 }

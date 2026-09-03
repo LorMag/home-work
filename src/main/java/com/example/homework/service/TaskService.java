@@ -1,66 +1,38 @@
 package com.example.homework.service;
 
-import com.example.homework.Priority;
 import com.example.homework.Status;
 import com.example.homework.Task;
+import com.example.homework.TaskMapper;
+import com.example.homework.repository.TaskRepository;
+import com.example.homework.repository.entity.TaskEntity;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 public class TaskService {
 
-    private final Map<Long, Task> storage = new HashMap<>();
+    private final TaskRepository taskRepository;
+    private final TaskMapper taskMapper;
 
-    private final AtomicLong counter = new AtomicLong(1L);
-
-    public TaskService() {
-        this.storage.put(counter.get(),
-                new Task(
-                        counter.getAndIncrement(),
-                        1L,
-                        1L,
-                        Status.CREATED,
-                        LocalDateTime.now(),
-                        LocalDateTime.now().plusDays(5),
-                        Priority.LOW
-                ));
-        this.storage.put(counter.get(),
-                new Task(
-                        counter.getAndIncrement(),
-                        2L,
-                        2L,
-                        Status.IN_PROGRESS,
-                        LocalDateTime.now(),
-                        LocalDateTime.now().plusDays(5),
-                        Priority.MEDIUM
-                ));
-        this.storage.put(counter.get(),
-                new Task(
-                        counter.getAndIncrement(),
-                        3L,
-                        3L,
-                        Status.DONE,
-                        LocalDateTime.now(),
-                        LocalDateTime.now().plusDays(5),
-                        Priority.HIGH
-                ));
+    @Autowired
+    public TaskService(TaskRepository taskRepository, TaskMapper taskMapper) {
+        this.taskRepository = taskRepository;
+        this.taskMapper = taskMapper;
     }
 
     public Task getTaskById(Long id) {
-        if (!storage.containsKey(id)) {
-            throw new NoSuchElementException("Не существует задачи с id = " + id);
-        }
-        return storage.get(id);
+
+        TaskEntity taskEntity = taskRepository.findById(id).orElseThrow(
+                () -> new NoSuchElementException("Не существует задачи с id = " + id)
+        );
+        return taskMapper.toResponse(taskEntity);
     }
 
     public List<Task> getAllTasks() {
-        return storage.values().stream().toList();
+        return taskRepository.findAll().stream().map(taskMapper::toResponse).toList();
     }
 
     public Task createTask(Task task) {
@@ -68,40 +40,69 @@ public class TaskService {
             throw new IllegalArgumentException("id и status при создании должны быть пустыми.");
         }
 
-        task.setId(counter.getAndIncrement());
-        task.setStatus(Status.CREATED);
-        this.storage.put(task.getId(), task);
-        return task;
+        TaskEntity taskEntity = new TaskEntity();
+        taskEntity.setCreatorId(task.getCreatorId());
+        taskEntity.setAssignedUserId(task.getAssignedUserId());
+        taskEntity.setStatus(Status.CREATED);
+        taskEntity.setCreateDateTime(task.getCreateDateTime());
+        taskEntity.setDeadlineDate(task.getDeadlineDate());
+        taskEntity.setPriority(task.getPriority());
+
+        return taskMapper.toResponse(taskRepository.save(taskEntity));
     }
 
     public Task updateTask(Long id, Task task) {
-        if (!this.storage.containsKey(id)) {
-            throw new NoSuchElementException("Не существует задачи с id = " + id);
-        }
+
+        TaskEntity taskEntity = taskRepository.findById(id).orElseThrow(
+                () -> new NoSuchElementException("Не существует задачи с id = " + id)
+        );
 
         if (task.getId() != null) {
             throw new IllegalArgumentException("id при обновлении должен быть пустым.");
         }
 
-        Task updatedTask = this.storage.get(id);
-
-        if (updatedTask.getStatus() == Status.DONE && task.getStatus() != Status.IN_PROGRESS) {
+        if (taskEntity.getStatus() == Status.DONE && task.getStatus() != Status.IN_PROGRESS) {
             throw new IllegalArgumentException("Обновить задачу в стаусе DONE можно только при её переводе в IN_PROGRESS.");
         }
 
-        updatedTask.setCreatorId(task.getId());
-        updatedTask.setAssignedUserId(task.getAssignedUserId());
-        updatedTask.setStatus(task.getStatus());
-        updatedTask.setDeadlineDate(task.getDeadlineDate());
-        updatedTask.setPriority(task.getPriority());
-        return updatedTask;
+        taskEntity.setCreatorId(task.getId());
+        taskEntity.setAssignedUserId(task.getAssignedUserId());
+        taskEntity.setStatus(task.getStatus());
+        taskEntity.setDeadlineDate(task.getDeadlineDate());
+        taskEntity.setPriority(task.getPriority());
+
+        return taskMapper.toResponse(taskRepository.save(taskEntity));
     }
 
     public void deleteTask(Long id) {
-        if (!this.storage.containsKey(id)) {
+        if (!taskRepository.existsById(id)) {
             throw new NoSuchElementException("Не существует задачи с id = " + id);
         }
-        this.storage.remove(id);
+        taskRepository.deleteById(id);
     }
 
+    public Task setTaskStatusInProgress(Long id, Task task) {
+
+        TaskEntity taskEntity = taskRepository.findById(id).orElseThrow(
+                () -> new NoSuchElementException("Не существует задачи с id = " + id)
+        );
+
+        if (taskEntity.getStatus() == Status.IN_PROGRESS) {
+            throw new IllegalArgumentException("Задача уже IN_PROGRESS");
+
+        }
+
+        if (task.getAssignedUserId() == null) {
+            throw new IllegalArgumentException("Невозможно перевести задачу в IN_PROGRESS, AssignedUserId = null");
+        }
+
+        if (taskRepository.findTasksByAssignedUserIdAndStatus(task.getAssignedUserId(), Status.IN_PROGRESS) > 6) {
+            throw new IllegalArgumentException(
+                    "Невозможно перевести задачу в IN_PROGRESS, у пользователя с id = " + task.getAssignedUserId() + " активно пять задач."
+            );
+        }
+
+        taskEntity.setStatus(Status.IN_PROGRESS);
+        return taskMapper.toResponse(taskRepository.save(taskEntity));
+    }
 }
