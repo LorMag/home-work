@@ -14,7 +14,8 @@ public class TaskMapper {
                 taskEntity.getStatus(),
                 taskEntity.getCreateDateTime(),
                 taskEntity.getDeadlineDate(),
-                taskEntity.getPriority()
+                taskEntity.getPriority(),
+                taskEntity.getDoneDateTime()
         );
     }
 

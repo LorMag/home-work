@@ -66,10 +66,18 @@ public class TaskController {
     }
 
     @PostMapping("/{id}/start")
-    public ResponseEntity<Task> setTaskStatusInProgress(@PathVariable("id") Long id, @RequestBody Task task)  {
-        log.info("setTaskStatusInProgress called, id = {}, task = {}", id, task);
-        Task updatedTask = taskService.setTaskStatusInProgress(id, task);
+    public ResponseEntity<Task> setTaskStatusInProgress(@PathVariable("id") Long id)  {
+        log.info("setTaskStatusInProgress called, id = {}", id);
+        Task updatedTask = taskService.setTaskStatusInProgress(id);
         log.info("setTaskStatusInProgress finished, response = {}", updatedTask);
         return ResponseEntity.ok(updatedTask);
+    }
+
+    @PostMapping("/{id}/complete")
+    public ResponseEntity<Task> completeTask(@PathVariable("id") Long id) {
+        log.info("completeTask called, id = {}", id);
+        Task task = taskService.completeTask(id);
+        log.info("completeTask finished, task = {}", task);
+        return ResponseEntity.ok(task);
     }
 }

@@ -8,6 +8,7 @@ import com.example.homework.repository.entity.TaskEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -81,7 +82,7 @@ public class TaskService {
         taskRepository.deleteById(id);
     }
 
-    public Task setTaskStatusInProgress(Long id, Task task) {
+    public Task setTaskStatusInProgress(Long id) {
 
         TaskEntity taskEntity = taskRepository.findById(id).orElseThrow(
                 () -> new NoSuchElementException("Не существует задачи с id = " + id)
@@ -92,17 +93,28 @@ public class TaskService {
 
         }
 
-        if (task.getAssignedUserId() == null) {
-            throw new IllegalArgumentException("Невозможно перевести задачу в IN_PROGRESS, AssignedUserId = null");
-        }
-
-        if (taskRepository.findTasksByAssignedUserIdAndStatus(task.getAssignedUserId(), Status.IN_PROGRESS) > 6) {
+        if (taskRepository.findTasksByAssignedUserIdAndStatus(taskEntity.getAssignedUserId(), Status.IN_PROGRESS) > 6) {
             throw new IllegalArgumentException(
-                    "Невозможно перевести задачу в IN_PROGRESS, у пользователя с id = " + task.getAssignedUserId() + " активно пять задач."
+                    "Невозможно перевести задачу в IN_PROGRESS, у пользователя с id = " + taskEntity.getAssignedUserId() + " активно пять задач."
             );
         }
 
         taskEntity.setStatus(Status.IN_PROGRESS);
         return taskMapper.toResponse(taskRepository.save(taskEntity));
+    }
+
+    public Task completeTask(Long id) {
+        TaskEntity taskEntity = taskRepository.findById(id).orElseThrow(
+                () -> new NoSuchElementException("Не существует задачи с id = " + id)
+        );
+
+        if (taskEntity.getAssignedUserId() == null && taskEntity.getDeadlineDate() == null) {
+            throw new IllegalArgumentException("assignedUserId или deadLineDate равны null");
+        }
+
+        taskEntity.setStatus(Status.DONE);
+        taskEntity.setDoneDateTime(LocalDateTime.now());
+        taskRepository.save(taskEntity);
+        return taskMapper.toResponse(taskEntity);
     }
 }

@@ -1,17 +1,39 @@
 package com.example.homework;
 
+import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Null;
+import org.springframework.validation.annotation.Validated;
+
 import java.time.LocalDateTime;
 
+@Validated
 public class Task {
+    @Null
     private Long id;
+    @NotNull
     private Long creatorId;
     private Long assignedUserId;
     private Status status;
     private LocalDateTime createDateTime;
+    @NotNull
+    @Future
     private LocalDateTime deadlineDate;
+    @NotNull
     private Priority priority;
 
-    public Task(Long id, Long creatorId, Long assignedUserId, Status status, LocalDateTime createDateTime, LocalDateTime deadlineDate, Priority priority) {
+    private LocalDateTime doneDateTime;
+
+    public Task(
+            Long id,
+            Long creatorId,
+            Long assignedUserId,
+            Status status,
+            LocalDateTime createDateTime,
+            LocalDateTime deadlineDate,
+            Priority priority,
+            LocalDateTime doneDateTime
+    ) {
         this.id = id;
         this.creatorId = creatorId;
         this.assignedUserId = assignedUserId;
@@ -19,6 +41,7 @@ public class Task {
         this.createDateTime = createDateTime;
         this.deadlineDate = deadlineDate;
         this.priority = priority;
+        this.doneDateTime = doneDateTime;
     }
 
     public Long getId() {
@@ -77,6 +100,14 @@ public class Task {
         this.priority = priority;
     }
 
+    public LocalDateTime getDoneDateTime() {
+        return doneDateTime;
+    }
+
+    public void setDoneDateTime(LocalDateTime doneDateTime) {
+        this.doneDateTime = doneDateTime;
+    }
+
     @Override
     public String toString() {
         return "Task{" +
@@ -87,6 +118,7 @@ public class Task {
                 ", createDateTime=" + createDateTime +
                 ", deadlineDate=" + deadlineDate +
                 ", priority=" + priority +
+                ", doneDateTime=" + doneDateTime +
                 '}';
     }
 }
