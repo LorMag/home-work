@@ -1,6 +1,9 @@
 package com.example.homework.controller;
 
+import com.example.homework.Priority;
+import com.example.homework.Status;
 import com.example.homework.Task;
+import com.example.homework.TaskSearchFilter;
 import com.example.homework.service.TaskService;
 
 import org.slf4j.Logger;
@@ -79,5 +82,29 @@ public class TaskController {
         Task task = taskService.completeTask(id);
         log.info("completeTask finished, task = {}", task);
         return ResponseEntity.ok(task);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Task>> searchAllByFilter(
+            @RequestParam("creatorId") Long creatorId,
+            @RequestParam("assignedUserId") Long assignedUserId,
+            @RequestParam("status") Status status,
+            @RequestParam("priority") Priority priority,
+            @RequestParam("pageSize") int pageSize,
+            @RequestParam("pageNum") int pageNum
+    ) {
+        TaskSearchFilter filter = new TaskSearchFilter(
+                creatorId,
+                assignedUserId,
+                status,
+                priority,
+                pageSize,
+                pageNum
+        );
+        log.info("searchAllByFilter called, filter = {}", filter);
+
+        List<Task> filteredTasks = taskService.searchAllByFilter(filter);
+        return ResponseEntity.ok(filteredTasks);
+
     }
 }

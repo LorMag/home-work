@@ -3,9 +3,11 @@ package com.example.homework.service;
 import com.example.homework.Status;
 import com.example.homework.Task;
 import com.example.homework.TaskMapper;
+import com.example.homework.TaskSearchFilter;
 import com.example.homework.repository.TaskRepository;
 import com.example.homework.repository.entity.TaskEntity;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -116,5 +118,22 @@ public class TaskService {
         taskEntity.setDoneDateTime(LocalDateTime.now());
         taskRepository.save(taskEntity);
         return taskMapper.toResponse(taskEntity);
+    }
+
+    public List<Task> searchAllByFilter(TaskSearchFilter taskSearchFilter) {
+
+        int pageSize = taskSearchFilter.pageSize() != 0 ? taskSearchFilter.pageSize() : 10;
+        int pageNum = taskSearchFilter.pageNum() != 0 ? taskSearchFilter.pageNum() : 10;
+
+        Pageable pageable = Pageable.ofSize(pageSize).withPage(pageNum);
+
+        List<TaskEntity> taskEntities = taskRepository.searchAllByFilter(
+                taskSearchFilter.creatorId(),
+                taskSearchFilter.assignedUserId(),
+                taskSearchFilter.status(),
+                taskSearchFilter.priority(),
+                pageable
+        );
+        return taskEntities.stream().map(taskMapper::toResponse).toList();
     }
 }
